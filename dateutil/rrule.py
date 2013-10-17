@@ -50,6 +50,7 @@ M365MASK = tuple(M365MASK)
 # Imported on demand.
 easter = None
 parser = None
+gettz = None
 
 class weekday(object):
     __slots__ = ["weekday", "n"]
@@ -431,7 +432,7 @@ class rrule(rrulebase):
                      HOURLY:ii.ddayset,
                      MINUTELY:ii.ddayset,
                      SECONDLY:ii.ddayset}[freq]
-        
+
         if freq < HOURLY:
             timeset = self._timeset
         else:
@@ -1001,10 +1002,10 @@ class _rrulestr(object):
                    ignoretz=False,
                    tzinfos=None):
         global parser
+        global gettz
         if compatible:
             forceset = True
             unfold = True
-        s = s.upper()
         if not s.strip():
             raise ValueError("empty string")
         if unfold:
@@ -1044,13 +1045,17 @@ class _rrulestr(object):
                     raise ValueError("empty property name")
                 name = parms[0]
                 parms = parms[1:]
+
+                name = name.upper()
+                value = value.upper()
+
                 if name == "RRULE":
                     for parm in parms:
                         raise ValueError("unsupported RRULE parm: "+parm)
                     rrulevals.append(value)
                 elif name == "RDATE":
                     for parm in parms:
-                        if parm != "VALUE=DATE-TIME":
+                        if parm.upper() != "VALUE=DATE-TIME":
                             raise ValueError("unsupported RDATE parm: "+parm)
                     rdatevals.append(value)
                 elif name == "EXRULE":
@@ -1059,16 +1064,24 @@ class _rrulestr(object):
                     exrulevals.append(value)
                 elif name == "EXDATE":
                     for parm in parms:
-                        if parm != "VALUE=DATE-TIME":
+                        if parm.upper() != "VALUE=DATE-TIME":
                             raise ValueError("unsupported RDATE parm: "+parm)
                     exdatevals.append(value)
                 elif name == "DTSTART":
+                    tzid = None
                     for parm in parms:
-                        raise ValueError("unsupported DTSTART parm: "+parm)
+                        if not parm.upper().startswith("TZID="):
+                            raise ValueError("unsupported DTSTART parm: "+parm)
+                        else:
+                            _, tzid = parm.split("=", 2)
                     if not parser:
                         from dateutil import parser
                     dtstart = parser.parse(value, ignoretz=ignoretz,
                                            tzinfos=tzinfos)
+                    if tzid is not None:
+                        if not gettz:
+                            from dateutil.tz import gettz
+                        dtstart = dtstart.replace(tzinfo=gettz(tzid))
                 else:
                     raise ValueError("unsupported property: "+name)
             if (forceset or len(rrulevals) > 1 or
