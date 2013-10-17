@@ -250,8 +250,10 @@ class rrule(rrulebase):
         self._freq = freq
         self._interval = interval
         self._count = count
-        if until and not isinstance(until, datetime.datetime):
-            until = datetime.datetime.fromordinal(until.toordinal())
+        if until:
+            if not isinstance(until, datetime.datetime):
+                until = datetime.datetime.fromordinal(until.toordinal())
+            until = until.replace(tzinfo=dtstart.tzinfo)
         self._until = until
         if wkst is None:
             self._wkst = calendar.firstweekday()
