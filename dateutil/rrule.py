@@ -252,6 +252,8 @@ class rrule(rrulebase):
         # this is used to support generating recurrences from events stored in PostgreSQL,
         # which converts all timezones to UTC on storage
         if tzid:
+            if not gettz:
+                from dateutil.tz import gettz
             tzid = gettz(tzid)
             if dtstart.tzinfo:
                 dtstart = dtstart.astimezone(tzid)
