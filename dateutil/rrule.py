@@ -238,6 +238,7 @@ class rrule(rrulebase):
                  byhour=None, byminute=None, bysecond=None, tzid=None,
                  cache=False):
         super(rrule, self).__init__(cache)
+        global gettz
         global easter
         if not dtstart:
             dtstart = datetime.datetime.now().replace(microsecond=0)
